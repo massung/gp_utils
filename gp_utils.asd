@@ -3,8 +3,8 @@
 
 (in-package :gp-utils-asd)
 
-(defsystem :gp-utils
-  :name "gp-utils"
+(defsystem :gp_utils
+  :name "gp_utils"
   :version "1.0"
   :author "Jeffrey Massung"
   :license "Apache 2.0"
