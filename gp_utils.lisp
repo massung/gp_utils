@@ -28,6 +28,7 @@
    #:draw-ellipsized-string
    #:draw-centered-string
    #:draw-right-justified-string
+   #:draw-bounded-string
 
    ;; image functions
    #:draw-fitted-image
@@ -105,6 +106,47 @@
                             (- x w)
                           (apply #'draw-string port text (- x w) y gp-args)))))
 
+(defun draw-bounded-string (port text bx by bw bh &rest gp-args &key (start 0) end font &allow-other-keys)
+  "Draw a wrapped string in a bounded box area. Truncate if too long."
+  (loop with ascent      = (get-font-ascent port font)
+        with line-height = (get-font-height port font)
+        with space       = (get-char-width port #\space font)
+        with x           = 0
+        with y           = 0
+        with word-width  = 0
+        with word-start  = nil
+
+        ;; loop over every character in the text
+        for i from start below (or end (length text))
+        for c = (char text i)
+        for newlinep = (char= c #\newline)
+        for breakp = (or newlinep (whitespace-char-p c))
+        
+        ;; when at a word break render the current word
+        do (if breakp
+               (progn
+                 (when word-start
+                   (apply #'draw-string port text (+ bx x) (+ by y ascent) :start word-start :end i gp-args))
+                 (incf x (+ word-width space))
+
+                 ;; reset the current word being rendered
+                 (setf word-width 0 word-start nil))
+
+             ;; set the word boundary when reaching a non-break
+             (progn
+               (when (null word-start)
+                 (setf word-start i))
+               (incf word-width (get-char-width port c font))))
+
+        ;; advance to the next line if the word is too long or at a newline
+        when (or newlinep (>= (+ x word-width) bw))
+        do (progn
+             (setf x 0)
+             
+             ;; advance the cursor to the next line, bust out if too far
+             (when (> (+ (incf y line-height) ascent) bh)
+               (loop-finish)))))
+        
 (defun draw-fitted-image (port image to-x to-y &key to-width to-height (best-fit-p t))
   "Render an image in a bounded area of a port and maintain aspect ratio."
   (when image
