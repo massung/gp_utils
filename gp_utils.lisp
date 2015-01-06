@@ -59,10 +59,10 @@
          ;; path moves in counter-clockwise direction
          (path (if (not filled)
                    (list top-left left bottom-left bottom bottom-right right top-right top)
-                 (list top-left left bottom-left bottom bottom-right right top-right top left bottom right top))))
+                 (list top-left left bottom-left bottom bottom-right right top-right top left bottom right))))
     
     ;; draw the path counter-clockwise (since arcs move with a positive sweep)
-    (apply #'draw-path port path x1 y1 :closed t gp-args)))
+    (apply #'draw-path port path x1 y1 :closed nil gp-args)))
 
 (defun draw-ellipsized-string (port text x1 y x2 &rest gp-args &key (start 0) font &allow-other-keys)
   "Draw a string, but truncate with ellipsis if too long or a newline."
