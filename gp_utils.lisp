@@ -115,37 +115,40 @@
         with y           = 0
         with word-width  = 0
         with word-start  = nil
+        with last-i      = (or end (length text))
 
         ;; loop over every character in the text
-        for i from start below (or end (length text))
+        for i from start below last-i
         for c = (char text i)
+        for ws = (whitespace-char-p c)
         for newlinep = (char= c #\newline)
-        for breakp = (or newlinep (whitespace-char-p c))
-        
-        ;; when at a word break render the current word
-        do (if breakp
-               (progn
-                 (when word-start
-                   (apply #'draw-string port text (+ bx x) (+ by y ascent) :start word-start :end i gp-args))
-                 (incf x (+ word-width space))
+        for lastp = (= i (1- last-i))
 
-                 ;; reset the current word being rendered
-                 (setf word-width 0 word-start nil))
-
-             ;; set the word boundary when reaching a non-break
-             (progn
-               (when (null word-start)
-                 (setf word-start i))
-               (incf word-width (get-char-width port c font))))
+        ;; if not at whitespace or newline, add the length of the character to the word
+        unless (or ws newlinep)
+        do (progn
+             (when (null word-start)
+               (setf word-start i))
+             (incf word-width (get-char-width port c font)))
 
         ;; advance to the next line if the word is too long or at a newline
         when (or newlinep (>= (+ x word-width) bw))
+        do (if (> (+ y line-height ascent) bh)
+               (progn
+                 (apply #'draw-character port #\u+2026 (+ bx x) (+ by y ascent) gp-args)
+                 (loop-finish))
+             (progn
+               (incf y line-height)
+               (setf x 0)))
+        
+        ;; when at end or a word break render the current word
+        when (or lastp newlinep ws)
         do (progn
-             (setf x 0)
-             
-             ;; advance the cursor to the next line, bust out if too far
-             (when (> (+ (incf y line-height) ascent) bh)
-               (loop-finish)))))
+             (when word-start
+               (let ((end (if lastp nil i)))
+                 (apply #'draw-string port text (+ bx x) (+ by y ascent) :start word-start :end end gp-args)))
+             (incf x (+ word-width space))
+             (setf word-width 0 word-start nil))))
         
 (defun draw-fitted-image (port image to-x to-y &key to-width to-height (best-fit-p t))
   "Render an image in a bounded area of a port and maintain aspect ratio."
