@@ -90,7 +90,7 @@
   (multiple-value-bind (left top right bottom)
       (get-string-extent port text font)
     (let ((pos-x (- x (if h-center-p (/ (- right left) 2) 0)))
-          (pos-y (- y (if v-center-p (/ (- bottom top) 2) 0))))
+          (pos-y (+ y (if v-center-p (/ (- bottom top) 2) 0))))
       (apply #'draw-string port text pos-x pos-y gp-args))))
 
 (defun draw-right-justified-string (port text x y &rest gp-args &key (start 0) font &allow-other-keys)
